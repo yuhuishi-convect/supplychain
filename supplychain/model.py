@@ -13,7 +13,32 @@ class Node(ABC):
     Node class defines the basic node in the supply chain network
     """
 
-    pass
+    def get_maximum_throughput(self, product) -> float:
+        """
+        get_maximum_throughput returns the maximum throughput of the node
+        """
+        maximum_throughput = getattr(self, "maximum_throughput", None)
+        if maximum_throughput is None:
+            raise ValueError("maximum throughput is not defined")
+        return maximum_throughput.get(product, float("inf"))
+
+    def get_maximum_storage(self, product) -> float:
+        """
+        get_maximum_storage returns the maximum storage of the node
+        """
+        maximum_storage = getattr(self, "maximum_storage", None)
+        if maximum_storage is None:
+            raise ValueError("maximum storage is not defined")
+        return maximum_storage.get(product, float("inf"))
+
+    def get_additional_stock_cover(self, product) -> float:
+        """
+        get_additional_stock_cover returns the additional stock cover of the node
+        """
+        additional_stock_cover = getattr(self, "additional_stock_cover", None)
+        if additional_stock_cover is None:
+            raise ValueError("additional stock cover is not defined")
+        return additional_stock_cover.get(product, 0)
 
 
 @dataclass
@@ -59,6 +84,22 @@ class Lane:
     time: int = 0
     initial_arrivals: List[int] = field(default_factory=list)
     can_ship: List[bool] = field(default_factory=list)
+
+    def can_ship_at(self, time: int) -> bool:
+        """
+        Check if units can be sent on the lane at the given time
+        """
+        if not self.can_ship:
+            return True
+        return self.can_ship[time]
+
+    def get_arrivals(self, time: int) -> int:
+        """
+        Get the number of units arriving at the lane at the given time
+        """
+        if not self.initial_arrivals:
+            return 0
+        return self.initial_arrivals[time]
 
 
 @dataclass
@@ -305,3 +346,33 @@ class SupplyChainNetwork:
         self.lanes_out[lane.origin].append(lane)
 
         return lane
+
+    def get_demand(self, customer: Customer, product: Product, time: int) -> float:
+        """
+        Get the demand for a product at a customer at a given time
+        """
+        for demand in self.demands:
+            if demand.customer == customer and demand.product == product:
+                return demand.demand[time]
+        return 0.0
+
+    def get_service_level(self, customer: Customer, product: Product) -> float:
+        """
+        Get the service level for a product at a customer
+        """
+        for demand in self.demands:
+            if demand.customer == customer and demand.product == product:
+                return demand.service_level
+        return 1.0
+
+    def get_lanes_in(self, node: Node) -> List[Lane]:
+        """
+        Get the lanes that lead to a node
+        """
+        return self.lanes_in.get(node, [])
+
+    def get_lanes_out(self, node: Node) -> List[Lane]:
+        """
+        Get the lanes that leave a node
+        """
+        return self.lanes_out.get(node, [])
