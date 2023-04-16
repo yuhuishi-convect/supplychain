@@ -247,6 +247,21 @@ class Plant(Node):
         self.maximum_throughput[product] = maximum_throughput
         self.time[product] = time
 
+    def has_bom(self, output: Product, input: Optional[Product] = None) -> bool:
+        """
+        Check if the plant has a bill of materials for the given product
+        """
+        if not input:
+            return output in self.bill_of_materials
+
+        return input in self.bill_of_materials[output]
+
+    def get_bom(self, output: Product, input: Product) -> float:
+        """
+        Get the amount of the input product needed to produce the output product
+        """
+        return self.bill_of_materials[output][input]
+
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Plant):
             return self.name == __o.name
